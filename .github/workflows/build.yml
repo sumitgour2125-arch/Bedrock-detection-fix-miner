@@ -3,7 +3,6 @@ name: Build Minecraft Mod
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
 
 concurrency:
   group: build-${{ github.ref }}
@@ -28,10 +27,18 @@ jobs:
           gradle-version: 8.12.1
 
       - name: Build Minecraft Mod
-        run: gradle build --no-daemon
+        run: |
+          F=$(grep -rl --include=settings.gradle "amethystsmartminer" . | head -1)
+          if [ -z "$F" ]; then
+            echo "settings.gradle for amethystsmartminer not found. Files in repo:"
+            find . -not -path './.git/*' -type f | head -50
+            exit 1
+          fi
+          cd "$(dirname "$F")"
+          gradle build --no-daemon
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: AmethystSmartMiner-jar
-          path: build/libs/*.jar
+          path: "**/build/libs/*.jar"
